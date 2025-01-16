@@ -1,0 +1,188 @@
+﻿@page "/login"
+@using System.ComponentModel.DataAnnotations;
+@using Budgetfriend.Services.Interfaces
+@using Budgetfriend.Model
+@using MudBlazor
+@inject NavigationManager Nav
+@inject IUserService UserService
+
+/* 
+ * Main login container with a gradient background
+ * Uses MudBlazor components for a modern, material design look
+ */
+<div class="login-page">
+    <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center" Style="min-height: 100vh;">
+        <MudPaper Elevation="8" Class="pa-8" Style="width: 100%; max-width: 500px; border-radius: 12px; background-color: rgba(255, 255, 255, 0.95);">
+            <MudStack Spacing="6">
+                // Brand logo section with account balance icon
+                <div class="d-flex justify-center mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Color="Color.Primary" />
+                </div>
+                
+                // Welcome message header
+                <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary" Class="mb-4">Welcome Back!</MudText>
+                
+                /* 
+                 * Main login form with validation
+                 * Uses MudForm for built-in form handling and validation
+                 */
+                <MudForm Model="@Users" @ref="form" Validation="true">
+                    <MudStack Spacing="4">
+                        // Username input with person icon
+                        <MudTextField T="string" 
+                                    Label="Username" 
+                                    Variant="Variant.Outlined"
+                                    @bind-Value="Users.Username"
+                                    For="@(() => Users.Username)"
+                                    Required="true"
+                                    RequiredError="Username is required."
+                                    Adornment="Adornment.Start"
+                                    AdornmentIcon="@Icons.Material.Filled.Person"
+                                    AdornmentColor="Color.Primary" />
+
+                        // Password input with lock icon and masked input
+                        <MudTextField T="string" 
+                                    Label="Password" 
+                                    Variant="Variant.Outlined"
+                                    InputType="InputType.Password"
+                                    @bind-Value="Users.Password"
+                                    For="@(() => Users.Password)"
+                                    Required="true"
+                                    RequiredError="Password is required."
+                                    Adornment="Adornment.Start"
+                                    AdornmentIcon="@Icons.Material.Filled.Lock"
+                                    AdornmentColor="Color.Primary" />
+
+                        // Currency dropdown with pre-defined options
+                        <MudSelect T="string" 
+                                 @bind-Value="Users.PreferredCurrency" 
+                                 Label="Preferred Currency"
+                                 Variant="Variant.Outlined"
+                                 AnchorOrigin="Origin.BottomCenter"
+                                 AdornmentIcon="@Icons.Material.Filled.CurrencyExchange"
+                                 AdornmentColor="Color.Primary">
+                            <MudSelectItem Value="@("USD")">US Dollar (USD)</MudSelectItem>
+                            <MudSelectItem Value="@("EUR")">Euro (EUR)</MudSelectItem>
+                            <MudSelectItem Value="@("NRS")">Nepalese Rupee (NRS)</MudSelectItem>
+                        </MudSelect>
+
+                        // Error message display (only shows when there's an error)
+                        @if (!string.IsNullOrEmpty(ErrorMessage))
+                        {
+                            <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="my-2">
+                                @ErrorMessage
+                            </MudAlert>
+                        }
+
+                        // Login button with full width and primary color
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  Size="Size.Large"
+                                  FullWidth="true"
+                                  OnClick="HandleLogin"
+                                  Class="mt-4">
+                            Sign In
+                        </MudButton>
+                    </MudStack>
+                </MudForm>
+            </MudStack>
+        </MudPaper>
+    </MudContainer>
+</div>
+
+@code {
+    // Store error messages for display to the user
+    private string? ErrorMessage;
+    // Reference to the form for validation
+    private MudForm? form;
+    // User model to store form data
+    public User Users { get; set; } = new();
+
+    /* 
+     * Handles the login process:
+     * 1. Validates the form
+     * 2. Attempts login if form is valid
+     * 3. Redirects to home on success
+     * 4. Shows error message on failure
+     */
+    private async Task HandleLogin()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            if (UserService.Login(Users))
+            {
+                Nav.NavigateTo("/home");
+            }
+            else
+            {
+                ErrorMessage = "Invalid username or password.";
+            }
+        }
+    }
+}
+
+/* 
+ * Styles section:
+ * - Creates a gradient background
+ * - Adds hover effects and animations
+ * - Implements glassmorphism design
+ * - Handles responsive layout
+ */
+<style>
+    // Main background with gradient
+    .login-page {
+        min-height: 100vh;
+        width: 100%;
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        background-size: cover;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+
+    // Input field styling with hover effects
+    ::deep .mud-input-control > .mud-input-control-input-container > .mud-input.mud-input-outlined {
+        background-color: rgba(255, 255, 255, 0.7);
+        transition: all 0.3s ease;
+    }
+
+    ::deep .mud-input-control > .mud-input-control-input-container > .mud-input.mud-input-outlined:hover,
+    ::deep .mud-input-control > .mud-input-control-input-container > .mud-input.mud-input-outlined:focus {
+        background-color: rgba(255, 255, 255, 0.9);
+        transform: translateY(-1px);
+    }
+
+    // Paper component with glassmorphism effect
+    ::deep .mud-paper {
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        transition: transform 0.3s ease;
+    }
+
+    ::deep .mud-paper:hover {
+        transform: translateY(-2px);
+    }
+
+    // Button hover animations
+    ::deep .mud-button {
+        transition: transform 0.2s ease;
+    }
+
+    ::deep .mud-button:hover {
+        transform: translateY(-1px);
+    }
+
+    // Link color transitions
+    ::deep .mud-link {
+        color: #4b6cb7;
+        transition: color 0.2s ease;
+    }
+
+    ::deep .mud-link:hover {
+        color: #182848;
+    }
+</style>

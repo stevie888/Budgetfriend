@@ -1,0 +1,199 @@
+@page "/add-debt"
+@using Budgetfriend.Model
+@using Budgetfriend.Services.Interfaces
+@inject NavigationManager Nav
+@inject ITransactionService TransactionService
+
+/*
+ * CSS Styles Section
+ * Contains styling for:
+ * - Page layout and container
+ * - Form elements and inputs
+ * - Buttons and interactive elements
+ * - Color schemes and animations
+ */
+<style>
+    .page-container {
+        padding: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+        min-height: 100vh;
+        color: #2c3e50;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+    }
+
+    .form-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        margin-top: 2rem;
+    }
+
+    h2 {
+        color: #4b6cb7;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+        font-weight: 600;
+        text-align: center;
+        text-shadow: none;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.9);
+        color: #2c3e50;
+    }
+
+    .form-input:focus {
+        border-color: #4b6cb7;
+        box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+        outline: none;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #182848 0%, #4b6cb7 100%);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+        transform: none;
+    }
+</style>
+
+// Main page container with form
+<div class="page-container">
+    <div class="form-container">
+        <h2>Add New Debt</h2>
+
+        <!-- 
+            Edit form with validation
+            Captures debt details: source, amount, due date, and notes
+        -->
+        <EditForm Model="@newDebt" OnValidSubmit="SaveDebt">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label class="form-label">Source</label>
+                <input type="text" class="form-input" @bind="newDebt.Title" required />
+                <ValidationMessage For="@(() => newDebt.Title)" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" step="0.01" class="form-input" @bind="newDebt.Amount" required />
+                <ValidationMessage For="@(() => newDebt.Amount)" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Due Date</label>
+                <input type="date" class="form-input" @bind="newDebt.Date" required />
+                <ValidationMessage For="@(() => newDebt.Date)" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea class="form-input" @bind="newDebt.Note" rows="3"></textarea>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    // Initialize new debt transaction with default values
+    private Transaction newDebt = new()
+    {
+        Type = "Debt",
+        Date = DateTime.Today
+    };
+
+    /// <summary>
+    /// Saves the new debt transaction
+    /// 1. Loads existing transactions
+    /// 2. Generates new ID (max + 1 or 1 if empty)
+    /// 3. Saves transaction and navigates back to debts page
+    /// </summary>
+    private async Task SaveDebt()
+    {
+        var transactions = await TransactionService.LoadTransactionsAsync();
+        newDebt.TransactionId = transactions.Count > 0 ? 
+            transactions.Max(t => t.TransactionId) + 1 : 1;
+        
+        await TransactionService.SaveTransactionAsync(newDebt);
+        Nav.NavigateTo("/debts");
+    }
+
+    /// <summary>
+    /// Cancels debt creation and returns to debts page
+    /// </summary>
+    private void Cancel()
+    {
+        Nav.NavigateTo("/debts");
+    }
+}

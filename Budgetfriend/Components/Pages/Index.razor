@@ -1,0 +1,17 @@
+﻿@page "/"
+@using Budgetfriend.Model
+@inject NavigationManager Nav
+
+@code{
+    /* This was previously used to manage global state across components
+     * Currently commented out but might be needed later for state management
+     * [CascadingParameter]
+     * private GlobalState _globalState { get; set; }
+     */
+
+    protected override void OnInitialized()
+    {
+        // When this page initializes, automatically redirect the user to the login page
+        Nav.NavigateTo("/login");
+    }
+}

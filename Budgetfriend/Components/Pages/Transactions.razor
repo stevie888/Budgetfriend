@@ -1,0 +1,547 @@
+﻿@page "/transactions"
+@using Budgetfriend.Model;
+@using Budgetfriend.Services.Interfaces;
+@using System.Text
+@inject NavigationManager Nav
+@inject ITransactionService TransactionService
+@inject IUserService UserService
+@inject ITagService TagService
+@inject IJSRuntime JS
+
+<style>
+    .page-container {
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        color: white;
+    }
+
+    .page-title {
+        color: white;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+        font-weight: 600;
+        text-align: center;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .controls-container {
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .filter-container, .sort-container {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-container h3, .sort-container h3 {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label, 
+    label,
+    .form-check-label,
+    .filter-container label,
+    .sort-container label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .form-group label {
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.9);
+        color: #2c3e50;
+    }
+
+    .form-control::placeholder {
+        color: #6c757d;
+    }
+
+    .form-control:focus {
+        border-color: #4b6cb7;
+        box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+        outline: none;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        border: none;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #182848 0%, #4b6cb7 100%);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        border: none;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, #218838 0%, #28a745 100%);
+        transform: translateY(-2px);
+    }
+
+    .table-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
+
+    .transactions-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .transactions-table th {
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: white;
+    }
+
+    .transactions-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        color: #2c3e50;
+    }
+
+    .transactions-table tr:hover {
+        background-color: rgba(75, 108, 183, 0.1);
+    }
+
+    .tag-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        border-radius: 20px;
+        margin: 0.25rem;
+        font-size: 0.875rem;
+        color: white;
+        font-weight: 500;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .sort-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-check {
+        color: #2c3e50;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-group {
+        flex: 1;
+        margin-bottom: 1rem;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-top: 1rem;
+    }
+
+    /* Update the filter container to be more compact */
+    .filter-container {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<div class="page-container">
+    <h3 class="page-title">Transactions</h3>
+
+    <div class="controls-container">
+        <div class="filter-container">
+            <h3>Filters</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="searchTitle">Search by Title:</label>
+                    <input type="text" id="searchTitle" @bind="SearchTitle" class="form-control" placeholder="Enter title" />
+                </div>
+                <div class="form-group">
+                    <label for="filterTags">Filter by Tags:</label>
+                    <input type="text" id="filterTags" @bind="FilterTags" class="form-control" placeholder="Enter tags" />
+                </div>
+                <div class="form-group">
+                    <label for="filterType">Filter by Type:</label>
+                    <select id="filterType" @bind="FilterType" class="form-control">
+                        <option value="">All</option>
+                        <option value="Inflow">Inflow</option>
+                        <option value="Outflow">Outflow</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="startDate">Start Date:</label>
+                    <input type="date" id="startDate" @bind="StartDate" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label for="endDate">End Date:</label>
+                    <input type="date" id="endDate" @bind="EndDate" class="form-control" />
+                </div>
+                <div class="form-group filter-buttons">
+                    <button @onclick="ApplyFiltersAndSearch" class="btn btn-primary">Apply</button>
+                    <button @onclick="ClearFilters" class="btn btn-secondary">Clear</button>
+                    <button @onclick="ExportToCSV" class="btn btn-success">Export</button>
+                </div>
+            </div>
+        </div>
+        <div class="sort-container">
+            <h3>Sorting</h3>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="sortDate">Sort by:</label>
+                    <select id="sortDate" @bind="SortBy" class="form-control">
+                        <option value="Date">Date</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-6">
+                    <label>Order:</label>
+                    <div class="d-flex align-items-center">
+                        <div class="form-check mr-3">
+                            <input type="radio" id="ascending" name="sortOrder" checked="@(IsAscending)"
+                                   @onchange="@(() => IsAscending = true)" class="form-check-input" />
+                            <label for="ascending" class="form-check-label">Ascending</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="radio" id="descending" name="sortOrder" checked="@(!IsAscending)"
+                                   @onchange="@(() => IsAscending = false)" class="form-check-input" />
+                            <label for="descending" class="form-check-label">Descending</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button @onclick="ApplySorting" class="btn btn-secondary mt-2">Sort</button>
+        </div>
+    </div>
+
+    <div class="table-container mt-4">
+        <table class="transactions-table table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Amount</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Tags</th>
+                    <th>Note</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (FilteredTransactions == null || FilteredTransactions.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8">No transactions available</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var transaction in FilteredTransactions)
+                    {
+                        <tr>
+                            <td>@transaction.TransactionId</td>
+                            <td>@transaction.Title</td>
+                            <td>@FormatAmount(transaction.Amount)</td>
+                            <td>@transaction.Type</td>
+                            <td>@transaction.Date</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(transaction.Tags))
+                                {
+                                    <div class="tags-wrapper">
+                                        @foreach (var tag in transaction.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                        {
+                                            <span class="tag-badge">@tag.Trim()</span>
+                                        }
+                                    </div>
+                                }
+                            </td>
+                            <td>@transaction.Note</td>
+                            <td>
+                                <button @onclick="() => NavigateToEditPage(transaction.TransactionId)" class="btn btn-primary btn-sm">Edit</button>
+                                <button @onclick="() => DeleteTransaction(transaction.TransactionId)" class="btn btn-danger btn-sm">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private List<Transaction> transactions = new List<Transaction>();
+    private List<Transaction> FilteredTransactions = new List<Transaction>();
+
+    private string SearchTitle;
+    private string FilterType;
+    private string FilterTags;
+    private DateTime? StartDate;
+    private DateTime? EndDate;
+
+    private string PreferredCurrency => UserService.PreferredCurrency;
+
+
+    // For sorting
+    private string SortBy { get; set; } = "Date";
+    private bool IsAscending { get; set; } = true;
+
+    private readonly List<string> _defaultTags = new List<string>
+    {
+        "Yearly", "Monthly", "Food", "Drinks", "Clothes", "Gadgets",
+        "Miscellaneous", "Fuel", "Rent", "EMI", "Party"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Get all transactions from the service
+        try
+        {
+            transactions = await TransactionService.LoadTransactionsAsync();
+            FilteredTransactions = await TransactionService.LoadTransactionsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading transactions: {ex.Message}");
+        }
+    }
+
+    private async Task LoadTransactionsAsync()
+    {
+        try
+        {
+            FilteredTransactions = await TransactionService.LoadTransactionsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading transactions: {ex.Message}");
+        }
+    }
+
+
+    private void NavigateToEditPage(int transactionId)
+    {
+        Nav.NavigateTo($"/edit-transaction/{transactionId}");
+    }
+
+    private async Task DeleteTransaction(int transactionId)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this transaction?");
+        if (confirmed)
+        {
+            try
+            {
+                await TransactionService.DeleteTransactionAsync(transactionId);
+                FilteredTransactions = await TransactionService.LoadTransactionsAsync();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting transaction: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task ApplyFiltersAndSearch()
+    {
+        var filtered = await TransactionService.FilterTransactionsAsync(StartDate, EndDate, FilterType, FilterTags);
+        if (!string.IsNullOrEmpty(SearchTitle))
+        {
+            filtered = filtered.Where(t => t.Title.Contains(SearchTitle, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+        FilteredTransactions = filtered;
+    }
+    private async Task ApplySorting()
+    {
+        if (IsAscending)
+        {
+            // Apply ascending sort
+            FilteredTransactions = await TransactionService.SortTransactionsAscending("date");
+        }
+        else
+        {
+            // Apply descending sort
+            FilteredTransactions = await TransactionService.SortTransactionsDescending("date");
+        }
+    }
+    private async Task ClearFilters()
+    {
+        SearchTitle = "";
+        FilterTags = "";
+        FilterType = "";
+        StartDate = null;
+        EndDate = null;
+        SortBy = "Date";
+        IsAscending = true;
+        await LoadTransactionsAsync();
+    }
+
+
+    private async Task DeleteTag(string tag)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete the tag '{tag}'?");
+        if (confirmed)
+        {
+            try
+            {
+                await TagService.DeleteCustomTagAsync(tag);
+                // Refresh transactions to update tags
+                FilteredTransactions = await TransactionService.LoadTransactionsAsync();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", $"Error deleting tag: {ex.Message}");
+            }
+        }
+    }
+
+    private string GetCurrencySymbol()
+    {
+        switch (PreferredCurrency)
+        {
+            case "USD":
+                return "$";
+            case "EUR":
+                return "€";
+            case "NRS":
+                return "Rs";
+            default:
+                return "$";  // Default to USD if no currency is selected
+        }
+    }
+
+    // Helper to format amounts with the currency symbol
+    private string FormatAmount(decimal amount)
+    {
+        return $"{GetCurrencySymbol()} {amount:N2}";
+    }
+
+    private async Task ExportToCSV()
+    {
+        try
+        {
+            var csvContent = new StringBuilder();
+            csvContent.AppendLine("ID,Title,Amount,Type,Date,Tags,Note");
+
+            foreach (var transaction in FilteredTransactions)
+            {
+                // Escape any commas in text fields
+                var title = transaction.Title?.Replace(",", ";");
+                var tags = transaction.Tags?.Replace(",", ";");
+                var note = transaction.Note?.Replace(",", ";");
+                
+                var line = $"{transaction.TransactionId}," +
+                          $"{title}," +
+                          $"{transaction.Amount}," +
+                          $"{transaction.Type}," +
+                          $"{transaction.Date:yyyy-MM-dd}," +
+                          $"{tags}," +
+                          $"{note}";
+                          
+                csvContent.AppendLine(line);
+            }
+
+            var fileName = $"transactions_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            var bytes = Encoding.UTF8.GetBytes(csvContent.ToString());
+            
+            // Convert to base64 for download
+            var base64 = Convert.ToBase64String(bytes);
+            var dataUrl = $"data:text/csv;base64,{base64}";
+            
+            // Trigger download using JS interop
+            await JS.InvokeVoidAsync("downloadFile", fileName, dataUrl);
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error exporting CSV: {ex.Message}");
+        }
+    }
+}

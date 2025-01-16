@@ -1,0 +1,243 @@
+﻿@page "/edit-transaction/{TransactionId:int}"
+@using Budgetfriend.Model;
+@using Budgetfriend.Services.Interfaces;
+@inject ITransactionService TransactionService
+@inject NavigationManager Nav
+
+/* 
+ * Styles for the edit transaction page
+ * - Creates a responsive container with a blurred background
+ * - Implements a modern form design with consistent spacing
+ * - Uses a cool blue gradient for interactive elements
+ * - Ensures good contrast and readability
+ */
+<style>
+    .page-container {
+        padding: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+        min-height: 100vh;
+        color: #2c3e50;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+    }
+
+    .form-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        margin-top: 2rem;
+    }
+
+    h3 {
+        color: #4b6cb7;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+        font-weight: 600;
+        text-align: center;
+        text-shadow: none;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    textarea,
+    select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.9);
+        color: #2c3e50;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+        border-color: #4b6cb7;
+        box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+        outline: none;
+    }
+
+    input[readonly] {
+        background-color: rgba(249, 249, 249, 0.9);
+        border: 2px solid #e2e8f0;
+        cursor: not-allowed;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    button[type="button"] {
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        color: white;
+    }
+
+    button[type="button"]:hover {
+        background: linear-gradient(135deg, #182848 0%, #4b6cb7 100%);
+        transform: translateY(-2px);
+    }
+
+    button[type="button"] + button[type="button"] {
+        background: #6c757d;
+    }
+
+    button[type="button"] + button[type="button"]:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    p {
+        text-align: center;
+        font-size: 1.2rem;
+        color: #6c757d;
+        margin: 2rem 0;
+    }
+</style>
+
+/* Main page layout with a container for the form */
+<div class="page-container">
+    <div class="form-container">
+        <h3>Edit Transaction</h3>
+
+        @if (transaction == null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            <form>
+                <div class="form-group">
+                    <label>Title:</label>
+                    <input type="text" @bind="transaction.Title" />
+                </div>
+
+                <div class="form-group">
+                    <label>Amount:</label>
+                    <input type="number" @bind="transaction.Amount" />
+                </div>
+
+                <div class="form-group">
+                    <label>Type:</label>
+                    <input type="text" value="@transaction.Type" readonly />
+                </div>
+
+                <div class="form-group">
+                    <label>Date:</label>
+                    <input type="date" @bind="transaction.Date" />
+                </div>
+
+                <div class="form-group">
+                    <label>Tags:</label>
+                    <input type="text" @bind="transaction.Tags" />
+                </div>
+
+                <div class="form-group">
+                    <label>Note:</label>
+                    <textarea @bind="transaction.Note"></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" @onclick="SaveTransaction">Save</button>
+                    <button type="button" @onclick="Cancel">Cancel</button>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+@code {
+    // Unique identifier for the transaction being edited
+    [Parameter]
+    public int TransactionId { get; set; }
+
+    // Holds the current transaction being edited
+    private Transaction transaction;
+
+    /* 
+     * Initializes the component by loading the transaction data
+     * - Fetches all transactions and finds the one we want to edit
+     * - Redirects to transactions page if the ID is not found
+     * - Handles any loading errors gracefully
+     */
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var transactions = await TransactionService.LoadTransactionsAsync();
+            transaction = transactions.FirstOrDefault(t => t.TransactionId == TransactionId);
+
+            if (transaction == null)
+            {
+                Nav.NavigateTo("/transactions"); // Redirect if not found
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading transaction: {ex.Message}");
+        }
+    }
+
+    /* 
+     * Saves the modified transaction back to storage
+     * - Persists changes using the transaction service
+     * - Redirects back to the transactions list on success
+     * - Logs any errors that occur during saving
+     */
+    private async Task SaveTransaction()
+    {
+        try
+        {
+            await TransactionService.SaveTransactionAsync(transaction);
+            Nav.NavigateTo("/transactions"); // Redirect to the transactions page
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving transaction: {ex.Message}");
+        }
+    }
+
+    // Returns to the transactions page without saving changes
+    private void Cancel()
+    {
+        Nav.NavigateTo("/transactions");
+    }
+}

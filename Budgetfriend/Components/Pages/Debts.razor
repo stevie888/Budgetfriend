@@ -1,0 +1,447 @@
+@page "/debts"
+@using Budgetfriend.Model
+@using Budgetfriend.Services.Interfaces
+@inject NavigationManager Nav
+@inject IUserService UserService
+@inject ITransactionService TransactionService
+@inject IJSRuntime JS
+
+/*
+ * Styling section defines the visual appearance of the page
+ * Uses a modern design with gradient backgrounds, card layouts,
+ * and responsive grid systems for better user experience
+ */
+<style>
+    .page-container {
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        color: white;
+    }
+
+    .page-title {
+        color: white;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+        font-weight: 600;
+        text-align: center;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        transition: transform 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-title {
+        color: #2c3e50;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+
+    .filters-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    .filter-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .filter-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .filter-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.9);
+        color: #2c3e50;
+    }
+
+    .filter-input:focus {
+        border-color: #4b6cb7;
+        box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+        outline: none;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #182848 0%, #4b6cb7 100%);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .table-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+        margin-top: 2rem;
+    }
+
+    .debts-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: rgba(255, 255, 255, 0.95);
+    }
+
+    .debts-table th {
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: white;
+    }
+
+    .debts-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        color: #2c3e50;
+    }
+
+    .debts-table tr:hover {
+        background-color: rgba(75, 108, 183, 0.1);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .status-cleared {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .total-debt { color: #dc3545; }
+    .cleared-debt { color: #28a745; }
+    .pending-debt { color: #ffc107; }
+</style>
+
+<div class="page-container">
+    <h2>Debts Management</h2>
+
+    /*
+     * Statistics Cards Section
+     * Displays three key metrics:
+     * 1. Total outstanding debt
+     * 2. Amount of cleared debt
+     * 3. Amount of pending debt
+     */
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-title">Total Debt Amount</div>
+            <div class="stat-value total-debt">@FormatAmount(totalDebtAmount)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Cleared Debt Amount</div>
+            <div class="stat-value cleared-debt">@FormatAmount(clearedDebtAmount)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Pending Debt Amount</div>
+            <div class="stat-value pending-debt">@FormatAmount(pendingDebtAmount)</div>
+        </div>
+    </div>
+
+    /*
+     * Filters Section
+     * Allows users to filter debts by:
+     * - Source name
+     * - Debt status (All/Pending/Cleared)
+     * - Date range (Start and End dates)
+     */
+    <div class="filters-container">
+        <div class="filter-group">
+            <div class="filter-item">
+                <label class="filter-label">Search by Source</label>
+                <input type="text" class="filter-input" @bind="searchSource" />
+            </div>
+            <div class="filter-item">
+                <label class="filter-label">Status</label>
+                <select class="filter-input" @bind="statusFilter">
+                    <option value="all">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="cleared">Cleared</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label class="filter-label">Start Date</label>
+                <input type="date" class="filter-input" @bind="startDate" />
+            </div>
+            <div class="filter-item">
+                <label class="filter-label">End Date</label>
+                <input type="date" class="filter-input" @bind="endDate" />
+            </div>
+        </div>
+        <div class="button-group">
+            <button class="btn btn-primary" @onclick="ApplyFilters">Apply Filters</button>
+            <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+            
+        </div>
+    </div>
+
+    /*
+     * Debts Table Section
+     * Displays all debts in a structured format with columns for:
+     * - Source
+     * - Amount
+     * - Due Date
+     * - Status
+     * - Notes
+     * - Action buttons (Edit/Delete/Clear)
+     */
+    <table class="debts-table">
+        <thead>
+            <tr>
+                <th>Source</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (filteredDebts == null || !filteredDebts.Any())
+            {
+                <tr>
+                    <td colspan="6" style="text-align: center;">No debts found</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var debt in filteredDebts)
+                {
+                    <tr>
+                        <td>@debt.Title</td>
+                        <td>@FormatAmount(debt.Amount)</td>
+                        <td>@debt.Date.ToShortDateString()</td>
+                        <td>
+                            <span class="status-badge @(debt.Type == "Cleared" ? "status-cleared" : "status-pending")">
+                                @(debt.Type == "Cleared" ? "Cleared" : "Pending")
+                            </span>
+                        </td>
+                        <td>@debt.Note</td>
+                        <td>
+                            <div class="button-group">
+                                <button class="btn btn-primary" @onclick="() => EditDebt(debt.TransactionId)">Edit</button>
+                                <button class="btn btn-secondary" @onclick="() => DeleteDebt(debt.TransactionId)">Delete</button>
+                                @if (debt.Type != "Cleared")
+                                {
+                                    <button class="btn btn-primary" @onclick="() => MarkAsCleared(debt.TransactionId)">Clear</button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    // Properties to store and manage debt-related data
+    private List<Transaction> allDebts = new();
+    private List<Transaction> filteredDebts = new();
+    
+    // Filter state properties
+    private string searchSource = "";
+    private string statusFilter = "all";
+    private DateTime? startDate;
+    private DateTime? endDate;
+    
+    // Statistics properties
+    private decimal totalDebtAmount;
+    private decimal clearedDebtAmount;
+    private decimal pendingDebtAmount;
+    
+    // Get user's preferred currency from UserService
+    private string PreferredCurrency => UserService.PreferredCurrency;
+
+    [Inject]
+    private IDebtService DebtService { get; set; }
+
+    // Initialize the component by loading debts and statistics
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDebts();
+        await LoadStatistics();
+    }
+
+    // Load all debts from the service
+    private async Task LoadDebts()
+    {
+        allDebts = await DebtService.GetAllDebtsAsync();
+        filteredDebts = allDebts;
+    }
+
+    // Fetch and update debt statistics (total, cleared, and pending amounts)
+    private async Task LoadStatistics()
+    {
+        var (total, cleared, pending) = await DebtService.GetDebtStatisticsAsync();
+        totalDebtAmount = total;
+        clearedDebtAmount = cleared;
+        pendingDebtAmount = pending;
+    }
+
+    // Apply user-selected filters to the debts list
+    private async Task ApplyFilters()
+    {
+        filteredDebts = await DebtService.FilterDebtsAsync(searchSource, statusFilter, startDate, endDate);
+    }
+
+    // Reset all filters to their default values
+    private void ClearFilters()
+    {
+        searchSource = "";
+        statusFilter = "all";
+        startDate = null;
+        endDate = null;
+        filteredDebts = allDebts;
+    }
+
+    // Navigation methods for debt management
+    private void NavigateToAddDebt()
+    {
+        Nav.NavigateTo("/add-debt");
+    }
+
+    private void EditDebt(int id)
+    {
+        Nav.NavigateTo($"/edit-debt/{id}");
+    }
+
+    // Delete a debt after user confirmation
+    private async Task DeleteDebt(int id)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this debt?");
+        if (confirmed)
+        {
+            await DebtService.DeleteDebtAsync(id);
+            await LoadDebts();
+            await LoadStatistics();
+        }
+    }
+
+    /*
+     * Mark a debt as cleared after checking if the user has sufficient balance
+     * This prevents clearing debts when there isn't enough money available
+     */
+    private async Task MarkAsCleared(int id)
+    {
+        var debt = allDebts.FirstOrDefault(d => d.TransactionId == id);
+        if (debt != null)
+        {
+            var transactions = await TransactionService.LoadTransactionsAsync();
+            var (_, _, _, _, _, balance, _) = TransactionService.CalculateTransactionSums(transactions);
+
+            // Check if user has enough balance to clear the debt
+            if (debt.Amount > balance)
+            {
+                await JS.InvokeVoidAsync("alert", $"Insufficient balance to clear this debt. Current balance: {FormatAmount(balance)}, Debt amount: {FormatAmount(debt.Amount)}");
+                return;
+            }
+
+            await DebtService.MarkDebtAsClearedAsync(id);
+            await LoadDebts();
+            await LoadStatistics();
+        }
+    }
+
+    // Helper method to get the appropriate currency symbol based on user preference
+    private string GetCurrencySymbol()
+    {
+        switch (PreferredCurrency)
+        {
+            case "USD":
+                return "$";
+            case "EUR":
+                return "€";
+            case "NRS":
+                return "Rs";
+            default:
+                return "$";  // Default to USD if no currency is selected
+        }
+    }
+
+    // Format monetary amounts with the appropriate currency symbol
+    private string FormatAmount(decimal amount)
+    {
+        return $"{GetCurrencySymbol()} {amount:N2}";
+    }
+}

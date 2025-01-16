@@ -1,0 +1,311 @@
+﻿@page "/home"
+@using Budgetfriend.Model
+@using Budgetfriend.Services
+@using Budgetfriend.Services.Interfaces
+@inject NavigationManager Nav
+@inject IUserService UserService
+@inject ITransactionService TransactionService
+@inject IDebtService DebtService
+@using MudBlazor
+
+<!-- Logout Button -->
+@*<button class="btn btn-lg btn-secondary" @onclick="ShowLogoutConfirmation" style="position: fixed; top: 20px; right: 20px;">
+    Logout
+</button>*@
+
+<MudContainer Class="mt-8 px-4" MaxWidth="MaxWidth.False" Style="@_containerStyle">
+    <MudText Typo="Typo.h3" Class="mb-6">Welcome, @_loggedInUsername</MudText>
+    
+    <MudGrid>
+        @* Card Section with custom styling *@
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column" Style="@_cardStyle">
+                <MudText Class="mb-4">Total Cash Inflows</MudText>
+                <MudText Typo="Typo.h4" Style="color: #00BFA6;">@FormatAmount(_totalInflows)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column" Style="@_cardStyle">
+                <MudText Class="mb-4">Total Cash Outflows</MudText>
+                <MudText Typo="Typo.h4" Style="color: #FF6B6B;">@FormatAmount(_totalOutflows)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column" Style="@_cardStyle">
+                <MudText Class="mb-4">Remaining Balance</MudText>
+                <MudText Typo="Typo.h4" Style="color: #4ECDC4;">@FormatAmount(_remainingBalance)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column" Style="@_cardStyle">
+                <MudText Class="mb-4">Remaining Debts</MudText>
+                <MudText Typo="Typo.h4" Style="color: #FFB900;">@FormatAmount(Math.Abs(_remainingDebts))</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column" Style="@_cardStyle">
+                <MudText Class="mb-4">Cleared Debts</MudText>
+                <MudText Typo="Typo.h4" Style="color: #45B7D1;">@FormatAmount(_clearedDebts)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column" Style="@_cardStyle">
+                <MudText Class="mb-4">Total Debts</MudText>
+                <MudText Typo="Typo.h4" Style="color: #FF7E67;">@FormatAmount(_totalDebts)</MudText>
+            </MudPaper>
+        </MudItem>
+        @*Cards Section*@
+
+        @*Charts Section*@
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-6" Style="@_chartStyle">
+                <MudText Typo="Typo.h5" Class="mb-4">Transaction Amounts by Tag</MudText>
+                <MudChart ChartType="ChartType.Bar" 
+                         ChartSeries="@Series" 
+                         @bind-SelectedIndex="Index" 
+                         XAxisLabels="@XAxisLabels" 
+                         Width="100%" 
+                         Height="350px"
+                         ChartOptions="@Options"/>
+            </MudPaper>
+        </MudItem>
+        @*Charts Section*@
+
+        @*Tables Section*@
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column" Style="@_tableStyle">
+                <MudText Typo="Typo.h6" Class="mb-4">Top 5 Highest Transactions</MudText>
+                <MudTable Items="@_highestTransactions" 
+                         Hover="true" 
+                         Elevation="0"
+                         Dense="true"
+                         Class="custom-table">
+                    <HeaderContent>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Amount</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Date">@context.Date</MudTd>
+                        <MudTd DataLabel="Amount">@FormatAmount(context.Amount)</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4" md="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column" Style="@_tableStyle">
+                <MudText Typo="Typo.h6" Class="mb-4">Top 5 Lowest Transactions</MudText>
+                <MudTable Items="@_lowestTransactions" 
+                         Hover="true" 
+                         Elevation="0"
+                         Dense="true"
+                         Class="custom-table">
+                    <HeaderContent>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Amount</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Date">@context.Date</MudTd>
+                        <MudTd DataLabel="Amount">@FormatAmount(context.Amount)</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4" md="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column" Style="@_tableStyle">
+                <MudText Typo="Typo.h6" Class="mb-4">Pending Debts</MudText>
+                <MudTable Items="@_pendingDebts" 
+                         Hover="true" 
+                         Elevation="0"
+                         Dense="true"
+                         Class="custom-table">
+                    <HeaderContent>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Amount</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Date">@context.Date</MudTd>
+                        <MudTd DataLabel="Amount">@FormatAmount(context.Amount)</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+        @*Tables Section*@
+    </MudGrid>
+
+</MudContainer>
+
+@code {
+    private int Index = -1; //default value cannot be 0 -> first selectedindex is 0.
+    public ChartOptions Options = new ChartOptions
+    {
+        YAxisFormat = "C2", // Currency format for Y-axis
+        
+    };
+
+    public List<ChartSeries> Series { get; set; } = new();
+    public string[] XAxisLabels { get; set; } = Array.Empty<string>();
+
+    private bool _hidePosition;
+    private bool _loading;
+
+    private decimal _totalInflows;
+    private decimal _totalOutflows;
+    private decimal _remainingBalance;
+    private decimal _remainingDebts;
+    private decimal _clearedDebts;
+    private decimal _totalDebts;
+    private List<Transaction> _highestTransactions = new();
+    private List<Transaction> _lowestTransactions = new();
+    private List<Transaction> _pendingDebts = new();
+
+    private string PreferredCurrency => UserService.PreferredCurrency;
+    private IEnumerable<Transaction> _elements = new List<Transaction>
+    {
+        new Transaction { Date = new DateTime(2024, 8, 1), Amount = 500 },
+        new Transaction { Date = new DateTime(2024, 8, 2), Amount = 1500 },
+        new Transaction { Date = new DateTime(2024, 8, 3), Amount = 2500 },
+        new Transaction { Date = new DateTime(2024, 8, 4), Amount = 3500 },
+
+    };
+
+    private string _loggedInUsername = string.Empty;
+
+    private string _message = string.Empty;
+
+    // Add these style strings
+    private string _cardStyle = @"
+        height: 200px;
+        transition: all 0.3s;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #ffffff, #f5f5f5);
+        box-shadow: 5px 5px 10px #e6e6e6, -5px -5px 10px #ffffff;
+        &:hover {
+            transform: translateY(-5px);
+            box-shadow: 8px 8px 15px #e6e6e6, -8px -8px 15px #ffffff;
+        }";
+
+    private string _chartStyle = @"
+        height: 500px;
+        border-radius: 12px;";
+
+    private string _tableStyle = @"
+        height: 100%;
+        border-radius: 12px;";
+
+    private string _containerStyle = @"
+        background-color: #E3F2FD;
+        min-height: 100vh;
+        padding: 2rem;
+        margin: 0;
+        width: 100%;
+        max-width: 100% !important;";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserService.IsLoggedIn)
+        {
+            _loggedInUsername = UserService.LoggedInUser;
+            _message = $"Welcome, {_loggedInUsername}!";
+        }
+
+        // Update chart options for better styling
+        Options = new ChartOptions
+        {
+            YAxisFormat = "C2",
+            ChartPalette = new[] { "#4ECDC4", "#FF6B6B", "#45B7D1", "#FFB900", "#FF7E67", "#00BFA6" },
+            LineStrokeWidth = 2
+        };
+
+        // Load transactions and calculate statistics
+        var transactions = await TransactionService.LoadTransactionsAsync();
+        var (totalInflows, totalOutflows, totalDebt, totalClearedDebt, remainingDebt, balance, _) = 
+            TransactionService.CalculateTransactionSums(transactions);
+
+        // Set the statistics
+        _totalInflows = totalInflows;
+        _totalOutflows = totalOutflows;
+        _remainingBalance = balance;
+        _remainingDebts = remainingDebt;
+        _clearedDebts = totalClearedDebt;
+        _totalDebts = totalDebt;
+
+        // Get highest and lowest transactions
+        _highestTransactions = transactions
+            .OrderByDescending(t => t.Amount)
+            .Take(5)
+            .ToList();
+
+        _lowestTransactions = transactions
+            .OrderBy(t => t.Amount)
+            .Take(5)
+            .ToList();
+
+        // Get pending debts
+        _pendingDebts = await DebtService.GetPendingDebtsAsync();
+
+        // Load tag statistics for the bar chart
+        await LoadTagStatistics();
+    }
+
+    private async Task LoadTagStatistics()
+    {
+        var transactions = await TransactionService.LoadTransactionsAsync();
+        var tagAmounts = new Dictionary<string, double>();
+
+        foreach (var transaction in transactions)
+        {
+            if (!string.IsNullOrEmpty(transaction.Tags))
+            {
+                var tags = transaction.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var tag in tags)
+                {
+                    var cleanTag = tag.Trim();
+                    if (tagAmounts.ContainsKey(cleanTag))
+                    {
+                        tagAmounts[cleanTag] += (double)transaction.Amount;
+                    }
+                    else
+                    {
+                        tagAmounts[cleanTag] = (double)transaction.Amount;
+                    }
+                }
+            }
+        }
+
+        // Get top 10 tags by amount
+        var topTags = tagAmounts.OrderByDescending(x => x.Value).Take(10);
+
+        // Update chart data
+        XAxisLabels = topTags.Select(x => x.Key).ToArray();
+        Series = new List<ChartSeries>
+        {
+            new ChartSeries 
+            { 
+                Name = "Amount by Tag", 
+                Data = topTags.Select(x => x.Value).ToArray() 
+            }
+        };
+    }
+
+
+    private string GetCurrencySymbol()
+    {
+        switch (PreferredCurrency)
+        {
+            case "USD":
+                return "$";
+            case "EUR":
+                return "€";
+            case "NRS":
+                return "Rs";
+            default:
+                return "$";  // Default to USD if no currency is selected
+        }
+    }
+
+    // Helper to format amounts with the currency symbol
+    private string FormatAmount(decimal amount)
+    {
+        return $"{GetCurrencySymbol()} {amount:N2}";
+    }
+}

@@ -1,0 +1,21 @@
+﻿﻿<!-- This paper component acts as a container for our navigation menu, with a fixed width of 250px -->
+<MudPaper Width="250px" Class="py-3" Elevation="0">
+    <!-- Navigation menu that holds all our app's main routes -->
+    <MudNavMenu>
+        <!-- 
+            Below are all the navigation links for our app:
+            - Dashboard: Main overview of finances
+            - Transactions: List of all financial transactions
+            - Debts Tracker: Keeps track of what you owe and who owes you
+            - Add Transaction: Quick way to record new expenses or income
+            - Add Debt: Form to log new debts
+        -->
+        <MudNavLink Href="/home">Dashboard</MudNavLink>
+        <MudNavLink Href="/transactions">Transactions</MudNavLink>
+        <MudNavLink Href="/debts">Debts Tracker</MudNavLink>
+        <MudNavLink Href="/addtransaction">Add Transaction</MudNavLink>
+        <MudNavLink Href="/add-debt">Add Debt</MudNavLink>
+    </MudNavMenu>
+</MudPaper>
+
+

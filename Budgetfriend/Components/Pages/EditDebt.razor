@@ -1,0 +1,235 @@
+@page "/edit-debt/{Id:int}"
+@using Budgetfriend.Model
+@using Budgetfriend.Services.Interfaces
+@inject NavigationManager Nav
+@inject ITransactionService TransactionService
+@inject IJSRuntime JS
+
+/* 
+    Styles for the edit debt page:
+    - Creates a full-screen container with scrolling
+    - Uses a clean, modern design with subtle shadows
+    - Implements a responsive form layout
+    - Includes hover effects and transitions for better UX
+*/
+<style>
+    .page-container {
+        padding: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+        min-height: 100vh;
+        color: #2c3e50;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+    }
+
+    .form-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        margin-top: 2rem;
+    }
+
+    h2 {
+        color: #4b6cb7;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+        font-weight: 600;
+        text-align: center;
+        text-shadow: none;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.9);
+        color: #2c3e50;
+    }
+
+    .form-input:focus {
+        border-color: #4b6cb7;
+        box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+        outline: none;
+    }
+
+    .form-input[readonly] {
+        background-color: rgba(249, 249, 249, 0.9);
+        cursor: not-allowed;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #182848 0%, #4b6cb7 100%);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .loading-message {
+        text-align: center;
+        color: white;
+        font-size: 1.2rem;
+        margin-top: 2rem;
+    }
+</style>
+
+/* Main page layout with a container for the form */
+<div class="page-container">
+    <div class="form-container">
+        <h2>Edit Debt</h2>
+        @if (debt == null)
+        {
+            /* Show loading message while fetching debt details */
+            <p>Loading...</p>
+        }
+        else
+        {
+            /* Edit form with validation and data binding */
+            <EditForm Model="@debt" OnValidSubmit="SaveDebt">
+                <DataAnnotationsValidator />
+
+                <div class="form-group">
+                    <label class="form-label">Source</label>
+                    <input type="text" class="form-input" @bind="debt.Title" required />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <input type="number" step="0.01" class="form-input" @bind="debt.Amount" required />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Due Date</label>
+                    <input type="date" class="form-input" @bind="debt.Date" required />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-input" @bind="debt.Note" rows="3"></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    /* ID parameter passed through the URL */
+    [Parameter]
+    public int Id { get; set; }
+
+    /* Holds the debt transaction being edited */
+    private Transaction debt;
+
+    /* 
+        Initialization method that runs when the component loads
+        - Loads all transactions
+        - Finds the specific debt by ID
+        - Redirects to debts page if not found
+    */
+    protected override async Task OnInitializedAsync()
+    {
+        var transactions = await TransactionService.LoadTransactionsAsync();
+        debt = transactions.FirstOrDefault(t => t.TransactionId == Id);
+        
+        if (debt == null)
+        {
+            Nav.NavigateTo("/debts");
+        }
+    }
+
+    /* 
+        Handles saving the edited debt
+        - Checks if there's sufficient balance for cleared debts
+        - Saves the transaction
+        - Handles errors and shows alerts
+        - Redirects back to debts page on success
+    */
+    private async Task SaveDebt()
+    {
+        try
+        {
+            /* For cleared debts, verify sufficient balance */
+            if (debt.Type == "Cleared")
+            {
+                var transactions = await TransactionService.LoadTransactionsAsync();
+                var (_, _, _, _, _, balance, _) = TransactionService.CalculateTransactionSums(transactions);
+
+                /* Show error if insufficient balance */
+                if (debt.Amount > balance)
+                {
+                    await JS.InvokeVoidAsync("alert", $"Insufficient balance to clear this debt. Current balance: {balance:C}, Debt amount: {debt.Amount:C}");
+                    return;
+                }
+            }
+
+            /* Save and redirect */
+            await TransactionService.SaveTransactionAsync(debt);
+            Nav.NavigateTo("/debts");
+        }
+        catch (Exception ex)
+        {
+            /* Show error message if save fails */
+            await JS.InvokeVoidAsync("alert", $"Error saving debt: {ex.Message}");
+        }
+    }
+
+    /* Returns to the debts page without saving changes */
+    private void Cancel()
+    {
+        Nav.NavigateTo("/debts");
+    }
+} 
