@@ -6,29 +6,23 @@
 @inject NavigationManager Nav
 @inject IUserService UserService
 
-/* 
- * Main login container with a gradient background
- * Uses MudBlazor components for a modern, material design look
- */
+
 <div class="login-page">
     <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center" Style="min-height: 100vh;">
         <MudPaper Elevation="8" Class="pa-8" Style="width: 100%; max-width: 500px; border-radius: 12px; background-color: rgba(255, 255, 255, 0.95);">
             <MudStack Spacing="6">
-                // Brand logo section with account balance icon
+               
                 <div class="d-flex justify-center mb-4">
                     <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Color="Color.Primary" />
                 </div>
                 
-                // Welcome message header
+              
                 <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary" Class="mb-4">Welcome Back!</MudText>
                 
-                /* 
-                 * Main login form with validation
-                 * Uses MudForm for built-in form handling and validation
-                 */
+               
                 <MudForm Model="@Users" @ref="form" Validation="true">
                     <MudStack Spacing="4">
-                        // Username input with person icon
+                        
                         <MudTextField T="string" 
                                     Label="Username" 
                                     Variant="Variant.Outlined"
@@ -40,7 +34,7 @@
                                     AdornmentIcon="@Icons.Material.Filled.Person"
                                     AdornmentColor="Color.Primary" />
 
-                        // Password input with lock icon and masked input
+                        
                         <MudTextField T="string" 
                                     Label="Password" 
                                     Variant="Variant.Outlined"
@@ -53,7 +47,7 @@
                                     AdornmentIcon="@Icons.Material.Filled.Lock"
                                     AdornmentColor="Color.Primary" />
 
-                        // Currency dropdown with pre-defined options
+                       
                         <MudSelect T="string" 
                                  @bind-Value="Users.PreferredCurrency" 
                                  Label="Preferred Currency"
@@ -66,7 +60,7 @@
                             <MudSelectItem Value="@("NRS")">Nepalese Rupee (NRS)</MudSelectItem>
                         </MudSelect>
 
-                        // Error message display (only shows when there's an error)
+                        
                         @if (!string.IsNullOrEmpty(ErrorMessage))
                         {
                             <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="my-2">
@@ -74,7 +68,7 @@
                             </MudAlert>
                         }
 
-                        // Login button with full width and primary color
+                        
                         <MudButton Variant="Variant.Filled" 
                                   Color="Color.Primary" 
                                   Size="Size.Large"
@@ -122,13 +116,7 @@
     }
 }
 
-/* 
- * Styles section:
- * - Creates a gradient background
- * - Adds hover effects and animations
- * - Implements glassmorphism design
- * - Handles responsive layout
- */
+
 <style>
     // Main background with gradient
     .login-page {

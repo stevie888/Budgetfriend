@@ -1,26 +1,14 @@
-﻿﻿@using Budgetfriend.Model;
+﻿﻿﻿﻿@using Budgetfriend.Model;
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
 
-/* Hey there! These are all the essential MudBlazor components we need to make our UI look great:
- * 
- * - ThemeProvider: Makes everything look consistent with our chosen theme
- * - PopoverProvider: Handles those neat little pop-ups and tooltips
- * - DialogProvider: Takes care of our popup windows and modals
- * - SnackbarProvider: Shows those cool temporary notifications
- */
+
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-/* This is where the magic happens! Our app's main layout structure:
- * 
- * Picture it like a sandwich:
- * - AppBar at the top (like the top slice of bread)
- * - Drawer on the side (the fillings that slide in and out)
- * - MainContent in the middle (the meat of our app)
- */
+
 <MudLayout>
     @if (!IsLoginPage)
     {
@@ -40,17 +28,13 @@
             <NavMenu />
         </MudDrawer>
     }
-    /* This is where all our actual page content lives.
-     * Think of it as the stage where all the action happens! */
+ 
     <MudMainContent>
         @Body
     </MudMainContent>
 </MudLayout>
 
-/* Our logout confirmation window - because we want to make sure
- * nobody accidentally clicks that logout button!
- * It's like a "are you sure?" safety net
- */
+
 @if (IsLogout)
 {
     /* This creates a nice dimmed background effect when the modal appears
@@ -58,18 +42,18 @@
     <div class="modal" tabindex="-1" role="dialog" style="display: block; background-color: rgba(0, 0, 0, 0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: auto;">
         <div class="modal-dialog" role="document" style="margin-top: 20%; margin-left: auto; margin-right: auto; max-width: 400px;">
             <div class="modal-content">
-                /* Modal header with title and close button */
+                
                 <div class="modal-header">
                     <h5 class="modal-title">Confirm Logout</h5>
                     <button type="button" class="close" @onclick="HideLogoutConfirmation">
                         <span>&times;</span>
                     </button>
                 </div>
-                /* Modal body with confirmation message */
+                
                 <div class="modal-body">
                     <p>Are you sure you want to logout?</p>
                 </div>
-                /* Modal footer with action buttons */
+                
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="HideLogoutConfirmation">No</button>
                     <button type="button" class="btn btn-primary" @onclick="Logout">Yes</button>

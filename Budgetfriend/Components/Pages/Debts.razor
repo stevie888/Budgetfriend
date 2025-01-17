@@ -6,11 +6,7 @@
 @inject ITransactionService TransactionService
 @inject IJSRuntime JS
 
-/*
- * Styling section defines the visual appearance of the page
- * Uses a modern design with gradient backgrounds, card layouts,
- * and responsive grid systems for better user experience
- */
+
 <style>
     .page-container {
         padding: 2rem;
@@ -196,13 +192,7 @@
 <div class="page-container">
     <h2>Debts Management</h2>
 
-    /*
-     * Statistics Cards Section
-     * Displays three key metrics:
-     * 1. Total outstanding debt
-     * 2. Amount of cleared debt
-     * 3. Amount of pending debt
-     */
+  
     <div class="stats-container">
         <div class="stat-card">
             <div class="stat-title">Total Debt Amount</div>
@@ -218,13 +208,7 @@
         </div>
     </div>
 
-    /*
-     * Filters Section
-     * Allows users to filter debts by:
-     * - Source name
-     * - Debt status (All/Pending/Cleared)
-     * - Date range (Start and End dates)
-     */
+   
     <div class="filters-container">
         <div class="filter-group">
             <div class="filter-item">
@@ -255,16 +239,7 @@
         </div>
     </div>
 
-    /*
-     * Debts Table Section
-     * Displays all debts in a structured format with columns for:
-     * - Source
-     * - Amount
-     * - Due Date
-     * - Status
-     * - Notes
-     * - Action buttons (Edit/Delete/Clear)
-     */
+  
     <table class="debts-table">
         <thead>
             <tr>

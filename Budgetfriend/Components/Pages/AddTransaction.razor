@@ -7,13 +7,6 @@
 @inject ITagService TagService
 @inject IJSRuntime JS
 
-/* Styles section
-   Contains all the CSS styling for the transaction form including:
-   - Page layout and container styles
-   - Form input styling
-   - Button designs
-   - Validation message formatting
-*/
 <style>
     .page-container {
         padding: 2rem;
@@ -120,9 +113,6 @@
     }
 </style>
 
-/* Main form container with a clean, modern design
-   Uses EditForm for automatic form handling and validation
-*/
 <div class="page-container">
     <div class="form-container">
         <h2>Add Transaction</h2>
@@ -206,28 +196,24 @@
 </div>
 
 @code {
-    // Properties to manage transaction data and UI state
     private Transaction newTransaction = new Transaction();
     private List<string> availableTags = new List<string>();
     private List<string> selectedTags = new List<string>();
     private string newTag = "";
     private string errorMessage;
 
-    // Predefined list of common transaction categories
     private readonly List<string> _defaultTags = new List<string>
     {
         "Yearly", "Monthly", "Food", "Drinks", "Clothes", "Gadgets",
         "Miscellaneous", "Fuel", "Rent", "EMI", "Party"
     };
 
-    // Initialize the form with today's date and load available tags
     protected override async Task OnInitializedAsync()
     {
         availableTags = await TagService.GetAllTagsAsync();
-        newTransaction.Date = DateTime.Today; // Set default date
+        newTransaction.Date = DateTime.Today;
     }
 
-    // Handles adding/removing tags from the current transaction
     private void ToggleTag(string tag)
     {
         if (selectedTags.Contains(tag))
@@ -238,7 +224,6 @@
         newTransaction.Tags = string.Join(",", selectedTags);
     }
 
-    // Allows users to create and save custom transaction tags
     private async Task AddCustomTag()
     {
         if (!string.IsNullOrWhiteSpace(newTag))
@@ -251,12 +236,6 @@
         }
     }
 
-    /* Handles the submission of a new transaction
-       Includes validation for:
-       - Sufficient balance for outflow transactions
-       - Unique transaction ID generation
-       - Error handling and user feedback
-    */
     private async Task AddNewTransaction()
     {
         try
@@ -290,17 +269,11 @@
         }
     }
 
-    // Returns user to the transactions list page
     private void CancelTransaction()
     {
         Nav.NavigateTo("/transactions");
     }
 
-    /* Handles the deletion of custom tags
-       - Confirms deletion with user
-       - Updates UI and selected tags
-       - Preserves default tags
-    */
     private async Task DeleteCustomTag(string tag)
     {
         try
@@ -311,13 +284,11 @@
                 if (confirmed)
                 {
                     await TagService.DeleteCustomTagAsync(tag);
-                    // Remove from selected tags if it was selected
                     if (selectedTags.Contains(tag))
                     {
                         selectedTags.Remove(tag);
                         newTransaction.Tags = string.Join(",", selectedTags);
                     }
-                    // Refresh available tags
                     availableTags = await TagService.GetAllTagsAsync();
                     StateHasChanged();
                 }
